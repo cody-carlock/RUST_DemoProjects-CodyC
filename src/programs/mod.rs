@@ -8,3 +8,5 @@ My previous experience in programming exclusively includes languages like Java, 
 Demo programs are written in order on a timeline, with dates included in the header. If a program is revised in the future, it will be noted in the header. The initial program will still be visible via Git history.
 This means that each demo program is written in order of least to most experience; For example, Demo1 is my first time writing in RUST, however, Demo8 would be written much later on, meaning I will have significantly more experience.
  */
+
+pub mod demo1_temp_converter;
