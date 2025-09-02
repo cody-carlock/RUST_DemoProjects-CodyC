@@ -1,5 +1,5 @@
 ﻿/*
-Module & all submodules written by Cody C.
+Module written by Cody C.
 
 This module includes programs intended to demonstrate my understanding of program development.
 It also demonstrates my ability to adapt, learn, and overcome any challenge I face.
