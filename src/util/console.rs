@@ -26,21 +26,21 @@ pub(crate) fn delay_write(args: fmt::Arguments<'_>, newline: bool, ms: Option<u6
 
 #[macro_export]
 macro_rules! dprint {
+        ($delay:expr, $fmt:literal $(, $($arg:tt)+)?) => {
+        $crate::util::console::delay_write(format_args!($fmt $(, $($arg)+)?), false, Some($delay))
+    };
     ($fmt:literal $(, $($arg:tt)+)?) => {
         $crate::util::console::delay_write(format_args!($fmt $(, $($arg)+)?), false, None)
-    };
-    ($delay:expr, $fmt:literal $(, $($arg:tt)+)?) => {
-        $crate::util::console::delay_write(format_args!($fmt $(, $($arg)+)?), false, Some($delay))
     };
 }
 
 #[macro_export]
 macro_rules! dprintln {
+        ($delay:expr, $fmt:literal $(, $($arg:tt)+)?) => {
+        $crate::util::console::delay_write(format_args!($fmt $(, $($arg)+)?), true, Some($delay))
+    };
     ($fmt:literal $(, $($arg:tt)+)?) => {
         $crate::util::console::delay_write(format_args!($fmt $(, $($arg)+)?), true, None)
-    };
-    ($delay:expr, $fmt:literal $(, $($arg:tt)+)?) => {
-        $crate::util::console::delay_write(format_args!($fmt $(, $($arg)+)?), true, Some($delay))
     };
 }
 
