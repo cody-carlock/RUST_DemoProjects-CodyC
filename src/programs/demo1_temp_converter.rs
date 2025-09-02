@@ -9,19 +9,15 @@ This tool will allow you to convert a measurement from one temperature scale to 
 !! NOTE: !!
 This program in particular, including the custom modules and submodules this program uses, is the first time I have ever written code in RUST.
 Additionally, RUST is the first low-level programming language I have used; prior to creating this program, I had only used languages like LUA, Java, Python, and C#.
-I used RUST documentation, online forums, and my experience in programming in order to write this program. No AI-generated code was used.
+I used RUST documentation, online forums, and my experience in programming in order to write this program.
+No AI-generated code was directly used; however, AI was used as a learning/debugging tool.
  */
 
-use crate::{dprintln, prompt};
 
-// Create a struct for simplified usage of temperature scales
-#[derive(Debug, Clone, Copy)]
-struct TempScale {
-    name: &'static str,
-    symbol: &'static str,
-    to_c: fn(f64) -> f64,
-    from_c: fn(f64) -> f64,
-}
+use crate::{dprint, dprintln, prompt};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct TempScale { name: &'static str, symbol: &'static str, to_c: fn(f64) -> f64, from_c: fn(f64) -> f64, }
 
 // Create a static slice of TempScale structs that contains data for scale formatting and conversions
 static SCALES: &[TempScale] = &[
@@ -32,60 +28,75 @@ static SCALES: &[TempScale] = &[
     TempScale { name: "Réaumur", symbol: "°Ré", to_c: |re| re * 5.0 / 4.0, from_c: |c| c * 4.0 / 5.0, },
 ];
 
-// Dynamically generate a selection of prompt choices that can be appended to the prompt
-fn format_scales(scales: &Vec<TempScale>) -> String {
-    scales
-        .iter()
-        .enumerate()
-        .map(|(i,s)| format!("{}: {}", i + 1, s.name))
-        .collect::<Vec<String>>()
-        .join("\n")
+fn normalize(s: &str) -> String {
+    let mut out = s.trim().to_lowercase();
+    out = out.replace('°', "");
+    out = out.replace('é', "e");
+    out
 }
 
-// Run program
-pub fn convert_temp() {
-    println!("Running temperature converter!");
+fn resolve_scale(input: &str) -> Option<TempScale> {
+    let raw = input.trim();
+    if raw.is_empty() {
+        return None;
+    }
 
-    // Create a mutable vector that contains remaining scale choices
-    let mut available: Vec<TempScale> = SCALES.to_vec();
+    if let Ok(idx) = raw.parse::<usize>() {
+        if (1..=SCALES.len()).contains(&idx) {
+            return Some(SCALES[idx - 1]);
+        }
+    }
 
-    // Closure that tests to see if a string input either matches the name or index of an item in available
-    let validate_scale = |input: &str| -> Option<TempScale> {
-        let s = input.trim().to_lowercase();
+    let norm = normalize(raw);
+    for scale in SCALES.iter() {
+        if normalize(scale.name) == norm || normalize(scale.symbol) == norm {
+            return Some(*scale);
+        }
+    }
 
-        if let Ok(n) = s.parse::<usize>() {
-            if (1..=available.len()).contains(&n) {
-                return Some(available[n - 1]);
+    None
+}
+
+fn choose_scale(label: &str, disallow: Option<TempScale>) -> TempScale {
+    let mut accept_string: [(fn(&String) -> bool, &str); 1] = [(|_: &String| false, "")];
+
+    loop {
+        let input: String = prompt!(String, label, &mut accept_string);
+
+        match resolve_scale(&input) {
+            None => {
+                dprintln!("Please enter a valid scale (number, name, or symbol).");
+                continue;
+            }
+            Some(s) => {
+                if Some(s) == disallow {
+                    dprintln!("Invalid; cannot repeat selection.");
+                    continue;
+                }
+                return s;
             }
         }
-
-        available
-            .iter()
-            .position(|scale| scale.name.eq_ignore_ascii_case(&s))
-            .map(|i| available[i])
-    };
-
-    // Cache the validated TempScale exactly once inside the validator closure.
-    let mut chosen: Option<TempScale> = None;
-
-    // Note: validator returns true => invalid, false => valid.
-    let mut validator = [(
-        |s: &String| {
-            chosen = validate_scale(s); // run once, cache result
-            chosen.is_none()            // invalid if None
-        },
-        "Your selection is invalid.",   // custom error text
-    )];
-
-    let msg_from = format!("Please select a scale to convert from: \n{}\nSelection: ", format_scales(&available)); // build the message that lists available scales
-    let _input: String = prompt!(String, 300, &msg_from, &mut validator); // run prompt with the mutable validator
-    let from_scale: TempScale = chosen.unwrap(); // safe; unwraps the chosen input
-
-    // Remove the selected TempScale from `available`
-    if let Some(idx) = available.iter().position(|sc| sc.name == from_scale.name) {
-        available.remove(idx);
     }
-    dprintln!("Available: \n{}", format_scales(&available));
-    dprintln!("Selected scale: {}", from_scale.name);
-    dprintln!("Remaining: \n{}", format_scales(&available));
+}
+
+pub fn convert_temp() {
+    let scales = SCALES.to_vec();
+
+    println!("Available scales:");
+    (1..).zip(scales).for_each(|(i, s)| dprintln!(100, "{i}: {} ({})", s.name, s.symbol));
+
+    let in_scale = choose_scale("Select input scale: ", None);
+    let out_scale = choose_scale(
+        "Select output scale: ",
+        Some(in_scale),
+    );
+
+    let mut f64_validators: [(fn(&f64) -> bool, &str); 1] = [(|_: &f64| false, "")];
+    let prompt_value = format!("Enter temperature in {} ({}): ", in_scale.name, in_scale.symbol);
+    let value: f64 = prompt!(f64, &prompt_value, &mut f64_validators);
+
+    let c = (in_scale.to_c)(value);
+    let converted = (out_scale.from_c)(c);
+
+    dprintln!("{}{} is equal to {}{}.", value, in_scale.symbol, converted, out_scale.symbol);
 }
