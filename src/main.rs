@@ -20,5 +20,7 @@ mod projects;
 
 fn main() {
     println!("Running main!");
+
+    // TODO: Use prompt! to create a program module selection system that can be used to easily choose a demo without editing main().
     projects::demo1_temp_converter::run();
 }
