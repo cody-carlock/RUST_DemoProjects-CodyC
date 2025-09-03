@@ -1,7 +1,4 @@
-/*
-Module written by Cody C.
+//! Utility module containing helper scripts.
 
-This module includes several submodules that are used to simplify code throughout the project.
- */
-
-pub mod console;
+pub mod prompt;
+pub mod markdown;
