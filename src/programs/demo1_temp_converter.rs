@@ -13,8 +13,7 @@ I used RUST documentation, online forums, and my experience in programming in or
 No AI-generated code was directly used; however, AI was used as a learning/debugging tool.
  */
 
-
-use crate::{dprint, dprintln, prompt};
+use crate::{mkprint, mkprintln, prompt};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct TempScale { name: &'static str, symbol: &'static str, to_c: fn(f64) -> f64, from_c: fn(f64) -> f64, }
@@ -65,12 +64,12 @@ fn choose_scale(label: &str, disallow: Option<TempScale>) -> TempScale {
 
         match resolve_scale(&input) {
             None => {
-                dprintln!("Please enter a valid scale (number, name, or symbol).");
+                mkprintln!("[color=red]Please enter a [color=white]valid scale[/color] (number, name, or symbol).[/color]");
                 continue;
             }
             Some(s) => {
                 if Some(s) == disallow {
-                    dprintln!("Invalid; cannot repeat selection.");
+                    mkprintln!("Invalid; cannot repeat selection.");
                     continue;
                 }
                 return s;
@@ -79,11 +78,12 @@ fn choose_scale(label: &str, disallow: Option<TempScale>) -> TempScale {
     }
 }
 
-pub fn convert_temp() {
+pub fn run() {
     let scales = SCALES.to_vec();
 
     println!("Available scales:");
-    (1..).zip(scales).for_each(|(i, s)| dprintln!(100, "{i}: {} ({})", s.name, s.symbol));
+
+    (1..).zip(scales).for_each(|(i, s)| mkprintln!("{i}: {} ({})", s.name, s.symbol));
 
     let in_scale = choose_scale("Select input scale: ", None);
     let out_scale = choose_scale(
@@ -98,5 +98,5 @@ pub fn convert_temp() {
     let c = (in_scale.to_c)(value);
     let converted = (out_scale.from_c)(c);
 
-    dprintln!("{}{} is equal to {}{}.", value, in_scale.symbol, converted, out_scale.symbol);
+    mkprintln!("{:.3}{} is equal to {:.3}{}.", value, in_scale.symbol, converted, out_scale.symbol);
 }
